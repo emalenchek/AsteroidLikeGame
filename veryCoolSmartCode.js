@@ -88,7 +88,84 @@ var Game = {
     enemy: class {
         // nothing yet
     },
-    enemies: [],
+    enemyList: {},
+    asteroid: class {
+        constructor(){
+            var size = Math.random() * (128 - 16) + 16;
+            var speed = 0.01; // Math.random() * (10 - 1) + 1;
+            var degree = (Math.random() * (40 - 1) + 1) * Math.PI / 180;
+
+            this.height = size; // should be dynamic (random number between 16-128)
+            this.width = size; // should be dynamic (random number between 16-128)
+            this.speed = speed; // should be dynamic (random number between 1-10)
+            this.originLocation = {
+                // Should randomize both, but at least one component
+                // needs to be rendered off screen
+                // can have a 0-1 randomized to determine which
+                // should start out of bounds
+                x: Math.random() * (800 - 0) + 0,
+                y: Math.random() * (800 - 0) + 0
+            };
+            // allows us to control adjustments to the slope for a specific asteroid
+            this.deltaXRandomAugmentationIndex = Math.floor(Math.random() * (5 - 0) + 0);
+            this.deltaYRandomAugmentationIndex = Math.floor(Math.random() * (5 - 0) + 0);
+            // the **amount** of adjustment to the slope
+            this.slopeVarianceScalar = Math.random() * (400 - 1) + 1;
+            this.slopeAugmentationList = [0, 1, -1, 2, -2];
+            this.location = {
+                x: this.originLocation.x,
+                y: this.originLocation.y
+            };
+            this.endLocation = {
+                x: 800 - (this.originLocation.x), // inverse of origin location
+                y: 800 - (this.originLocation.y) // inverse of end location
+            };
+            this.color = 'rgb(255 255 255)';
+            this.id = Date.now();
+            this.rotationValue = degree; // should be dynamic (random number between 1-40* for now)
+        };
+
+        render(canvas, ctx){
+            // nothing yet
+            ctx.fillStyle = this.color;
+            ctx.fillRect(
+                this.location.x - (0.5 * this.width),
+                this.location.y - (0.5 * this.height),
+                this.width,
+                this.height
+            );
+        }
+
+        updateLocation(){
+            // for now, just draw a line from the inverse coordinate
+            // eventually we will want to adjust slope of line "equation"
+            // so that we don't always send asteroid through the middle of the canvas
+
+            // y2-y1 / x2-x1
+            var end = this.endLocation;
+            var start = this.originLocation;
+
+            var options = this.slopeAugmentationList;
+            var xIndex = this.deltaXRandomAugmentationIndex;
+            var yIndex = this.deltaYRandomAugmentationIndex;
+            var amount = this.slopeVarianceScalar;
+
+            var deltaY = end.y - start.y + (options[yIndex] * amount);
+            var deltaX = end.x - start.x + (options[xIndex] * amount);
+
+            this.location.x = this.location.x + (deltaX * this.speed);
+            this.location.y = this.location.y + (deltaY * this.speed);
+        }
+
+        checkAsteroidOutOfBounds(){
+            // may actually want to or this as an optimization
+            return (
+                Math.abs(this.location.x - this.originLocation.x) > 800 &&
+                Math.abs(this.location.y - this.originLocation.y)
+            )
+        }
+    },
+    asteroidList: {},
     controls: {
         /**
          * Sets up all controls logic
@@ -203,6 +280,8 @@ const main = function(){
     Game.render.renderPlayerSprite(canvas, ctx);
 
     // everything below here will be part of the game loop
+    var asteroidTimerDefault = 3 * 60;
+    var asteroidTimer = 3 * 60; // multiplied by 60 because 60fps
 
     setInterval(function(){
         // update player location based on activeKey
@@ -210,6 +289,18 @@ const main = function(){
         Game.render.refreshBackgroundCanvas(canvas, ctx);
         Game.render.renderPlayerSprite(canvas, ctx);
 
+        // decrement asteroid timer
+        asteroidTimer--;
+
+        if (asteroidTimer <= 0){
+            // create new asteroid
+            // and add to active list
+            var newAsteroid = new Game.asteroid();
+            asteroidTimer = asteroidTimerDefault;
+            Game.asteroidList[newAsteroid.id] = newAsteroid;
+        }
+
+        // render all active projectiles
         for (var i in Game.projectilesList){
             var projectile = Game.projectilesList[i];
 
@@ -227,6 +318,19 @@ const main = function(){
                 projectile.updateLocation();
                 projectile.render(canvas, ctx);
             }
+        }
+
+        for (var i in Game.asteroidList){
+            var asteroid = Game.asteroidList[i];
+
+            // cleanup out of bounds asteroids
+            if (asteroid.checkAsteroidOutOfBounds()){
+                delete Game.asteroidList[asteroid.id];
+                delete asteroid;
+            }
+
+            asteroid.updateLocation();
+            asteroid.render(canvas, ctx);
         }
 
     }, (1000 / 60));
