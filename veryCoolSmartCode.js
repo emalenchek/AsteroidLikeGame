@@ -92,26 +92,44 @@ var Game = {
     asteroid: class {
         constructor(){
             var size = Math.random() * (128 - 16) + 16;
-            var speed = 0.01; // Math.random() * (10 - 1) + 1;
-            var degree = (Math.random() * (40 - 1) + 1) * Math.PI / 180;
+            var speed = 0.007; // Math.random() * (10 - 1) + 1;
+            var degree = Math.random() * (360 - 1) + 1;
+            var randomizeCoordinateOutOfBounds = Math.random() * (4 - 0) + 0;
+            var xOriginStart = Math.random() * (800 - 0) + 0;
+            var yOriginStart = Math.random() * (800 - 0) + 0;
+
+            // this is to guarantee that the asteroid will always start out of bounds
+            if (randomizeCoordinateOutOfBounds < 1){
+                xOriginStart += 800;
+            }
+            else if (randomizeCoordinateOutOfBounds < 2){
+                xOriginStart -= 800;
+            }
+            else if (randomizeCoordinateOutOfBounds < 3){
+                yOriginStart += 800;
+            }
+            else {
+                yOriginStart -= 800;  
+            }
 
             this.height = size; // should be dynamic (random number between 16-128)
             this.width = size; // should be dynamic (random number between 16-128)
             this.speed = speed; // should be dynamic (random number between 1-10)
+
             this.originLocation = {
                 // Should randomize both, but at least one component
                 // needs to be rendered off screen
                 // can have a 0-1 randomized to determine which
                 // should start out of bounds
-                x: Math.random() * (800 - 0) + 0,
-                y: Math.random() * (800 - 0) + 0
+                x: xOriginStart,
+                y: yOriginStart
             };
             // allows us to control adjustments to the slope for a specific asteroid
-            this.deltaXRandomAugmentationIndex = Math.floor(Math.random() * (5 - 0) + 0);
-            this.deltaYRandomAugmentationIndex = Math.floor(Math.random() * (5 - 0) + 0);
+            this.deltaXRandomAugmentationIndex = Math.floor(Math.random() * (7 - 0) + 0);
+            this.deltaYRandomAugmentationIndex = Math.floor(Math.random() * (7 - 0) + 0);
             // the **amount** of adjustment to the slope
-            this.slopeVarianceScalar = Math.random() * (400 - 1) + 1;
-            this.slopeAugmentationList = [0, 1, -1, 2, -2];
+            this.slopeVarianceScalar = Math.random() * (300 - 1) + 1;
+            this.slopeAugmentationList = [0, 1, -1, 2, -2, 3, -3];
             this.location = {
                 x: this.originLocation.x,
                 y: this.originLocation.y
@@ -128,20 +146,28 @@ var Game = {
         render(canvas, ctx){
             // nothing yet
             ctx.fillStyle = this.color;
+
+            // TODO: rotation of Rect in place when drawing
+            // this.rotationValue++;
+            // if (this.rotationValue > 360){
+            //     this.rotationValue = 0;
+            // }
+
+            // ctx.rotate((this.rotationValue * Math.PI) / 180);
             ctx.fillRect(
                 this.location.x - (0.5 * this.width),
                 this.location.y - (0.5 * this.height),
                 this.width,
                 this.height
             );
+
+            // Reset transformation matrix to the identity matrix
+            // ctx.setTransform(1, 0, 0, 1, 0, 0);
         }
 
         updateLocation(){
-            // for now, just draw a line from the inverse coordinate
-            // eventually we will want to adjust slope of line "equation"
-            // so that we don't always send asteroid through the middle of the canvas
-
-            // y2-y1 / x2-x1
+            // updates the location of the asteroid with
+            // some variance in the trajectory to spice things up
             var end = this.endLocation;
             var start = this.originLocation;
 
@@ -160,8 +186,8 @@ var Game = {
         checkAsteroidOutOfBounds(){
             // may actually want to or this as an optimization
             return (
-                Math.abs(this.location.x - this.originLocation.x) > 800 &&
-                Math.abs(this.location.y - this.originLocation.y)
+                Math.abs(this.location.x - this.originLocation.x) > 1600 &&
+                Math.abs(this.location.y - this.originLocation.y) > 1600
             )
         }
     },
