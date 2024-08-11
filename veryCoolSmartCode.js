@@ -94,11 +94,11 @@ var Game = {
             var size = Math.random() * (128 - 16) + 16;
             var speed = 0.007; // Math.random() * (10 - 1) + 1;
             var degree = Math.random() * (360 - 1) + 1;
-            var randomizeCoordinateOutOfBounds = Math.random() * (4 - 0) + 0;
             var xOriginStart = Math.random() * (800 - 0) + 0;
             var yOriginStart = Math.random() * (800 - 0) + 0;
 
             // this is to guarantee that the asteroid will always start out of bounds
+            var randomizeCoordinateOutOfBounds = Math.random() * (4 - 0) + 0;
             if (randomizeCoordinateOutOfBounds < 1){
                 xOriginStart += 800;
             }
