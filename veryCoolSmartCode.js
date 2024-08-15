@@ -11,6 +11,40 @@ var Game = {
     /**
      * Player character meta data/info/options
      */
+    score: class {
+        constructor() {
+            this.value = 0; // int value to track Game score
+            this.width = 48;
+            this.height = 48;
+            this.location = {
+                x: Number((800 / 2) - (0.5 * this.width)),
+                y: Number((800 / 16) - (0.5 * this.height))
+            },
+            this.color = 'rgb(255 255 255)';
+        };
+
+        /**
+         * 
+         * @param {HTMLCanvasElement} canvas - html canvas el 
+         * @param {CanvasRenderingContext2D} ctx - 2d context
+         */
+        renderScore(canvas, ctx){
+            ctx.fillStyle = this.color;
+            // right now just render a rectangle, but want to
+            // build number vector graphic based on value
+            ctx.fillRect(
+                this.location.x,
+                this.location.y,
+                this.width,
+                this.height
+            );
+        }
+
+        updateScore(additiveValue){
+            this.value += additiveValue;
+        }
+
+    },
     player: {
         name: 'Scooter',
         alive: true,
@@ -78,10 +112,26 @@ var Game = {
             );
         }
 
+        // updates then projectile line equation trajectory and multiplying by speed scalar
         updateLocation(){
-            // nothing yet
             this.location.x = this.location.x + (this.deltaX * this.speed);
             this.location.y = this.location.y + (this.deltaY * this.speed);
+        }
+
+        /**
+         * Checks if the projectile 'collides' with the asteroid
+         * @param {asteroid} asteroid - asteroid class instance to check
+         * @returns {Boolean} - result of calc true/false
+         */
+        checkCollisionWithAsteroid(asteroid){
+            var xDiff = Math.abs(asteroid.location.x - this.location.x);
+            var yDiff = Math.abs(asteroid.location.y - this.location.y);
+            var collisionOffset = (asteroid.width / 2);
+
+            if (xDiff <= collisionOffset && yDiff <= collisionOffset){
+                return true;
+            }
+            return false;
         }
     },
     projectilesList: {},
@@ -148,7 +198,7 @@ var Game = {
             ctx.fillStyle = this.color;
 
             // TODO: rotation of Rect in place when drawing
-            // this.rotationValue++;
+            //this.rotationValue++;
             // if (this.rotationValue > 360){
             //     this.rotationValue = 0;
             // }
@@ -192,6 +242,7 @@ var Game = {
         }
     },
     asteroidList: {},
+    activeScore: null,
     controls: {
         /**
          * Sets up all controls logic
@@ -202,7 +253,7 @@ var Game = {
                 Game.controls.keyActive = e.key;
             });
 
-            // TODO: SHOOTING on mouse click or hold
+            // handle firing
             window.addEventListener("mousedown", function(e){
                 var canvas = document.getElementById("canvas");
                 if (e.target === canvas){
@@ -296,6 +347,10 @@ const main = function(){
     const canvas = document.getElementById("canvas");
     const ctx = canvas.getContext("2d");
 
+    // instantiate score class
+    var score = new Game.score();
+    Game.activeScore = score;
+
     // Set up event listeners
     Game.controls.configureControlsListeners();
 
@@ -305,8 +360,14 @@ const main = function(){
     // rendering player to screen
     Game.render.renderPlayerSprite(canvas, ctx);
 
+    score.renderScore(canvas, ctx);
+
     // everything below here will be part of the game loop
     var asteroidTimerDefault = 3 * 60;
+
+    // Move this to Game object
+    // reduce timer as player accumulates score
+    // to increase rate of asteroid spawn
     var asteroidTimer = 3 * 60; // multiplied by 60 because 60fps
 
     setInterval(function(){
@@ -330,22 +391,51 @@ const main = function(){
         for (var i in Game.projectilesList){
             var projectile = Game.projectilesList[i];
 
-            // check if projectile is out of bounds
-            if (
-                projectile.location.x < -10 ||
-                projectile.location.x > 810 ||
-                projectile.location.y < -10 ||
-                projectile.location.y > 810
-            ){
-                delete Game.projectilesList[projectile.id];
-                delete projectile;
+            // check each asteroid to see if projectile is
+            // colliding
+
+            for (var j in Game.asteroidList){
+                var asteroid = Game.asteroidList[j];
+                if (projectile.checkCollisionWithAsteroid(asteroid)){
+                    // destroy projectile
+                    delete Game.projectilesList[projectile.id];
+                    delete projectile;
+
+                    // destroy asteroid
+                    delete Game.asteroidList[asteroid.id];
+                    delete asteroid;
+
+                    // need to increment player.score
+                    // for now just have a static +1 added
+                    // but will want to calculate the new score
+                    // based on asteroid size and speed
+                    // console.log(++Game.player.score);
+                    score.updateScore(1);
+
+                    return;
+                }
             }
-            else {
-                projectile.updateLocation();
-                projectile.render(canvas, ctx);
+
+            if (projectile){
+                // check if projectile is out of bounds
+                if (
+                    projectile.location.x < -10 ||
+                    projectile.location.x > 810 ||
+                    projectile.location.y < -10 ||
+                    projectile.location.y > 810
+                ){
+                    delete Game.projectilesList[projectile.id];
+                    delete projectile;
+                }
+                else {
+                    projectile.updateLocation();
+                    projectile.render(canvas, ctx);
+                }
             }
         }
 
+        // loop and update location and render for
+        // all active asteroids
         for (var i in Game.asteroidList){
             var asteroid = Game.asteroidList[i];
 
@@ -358,6 +448,8 @@ const main = function(){
             asteroid.updateLocation();
             asteroid.render(canvas, ctx);
         }
+
+        score.renderScore(canvas, ctx);
 
     }, (1000 / 60));
 };
