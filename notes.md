@@ -16,6 +16,7 @@ size and speed.
     - may want to think about health values etc.
 - Game over (restart dialog with score)
 - Asteroid rotation
+- refine movement
 
 
 STRETCH:
@@ -23,3 +24,4 @@ STRETCH:
 - enemies other than asteroids
 - Adding additional effects for destroyed player and asteroids
 - Sound effects
+- For "mine/honing" power up reset adjust end location for all active projectiles to redirect to homing target
