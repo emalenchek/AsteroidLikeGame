@@ -1,12 +1,13 @@
 
 TODO:
 
-- When asteroid is destroyed
-    - spawn 4 little baby asteroids
-    that are smaller
-    - check to see if the asteroid is large enough to care about collision (scoring/color/etc)
 - Asteroid rotation
 - refine movement
+- fix score display offset as
+score increases
+- Start game menu / title screen
+- Name the game
+- improve art of asteroids and spaceship
 
 
 STRETCH:
