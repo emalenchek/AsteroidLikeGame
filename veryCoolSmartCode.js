@@ -48,9 +48,53 @@ var Game = {
         }
 
         updateScore(additiveValue){
-            this.value += additiveValue;
+            // point value scalar
+            var scalar = 3;
+            this.value += (additiveValue * scalar);
         }
 
+    },
+    restart: function(event){
+        // prevent player from accidentally restarting
+        if (event.key === 'r' || event.key === 'R'){
+            window.removeEventListener('keydown', Game.restartHandler);
+            Game.render.clearScreen();
+            main();
+        }
+    },
+    endGame: function(){
+        // reset player location and score
+        Game.player.location = {x: 400, y: 400};
+        // Game.activeScore = null;
+
+        // clear asteroids
+        for (var i in Game.asteroidList){
+            var asteroid = Game.asteroidList[i];
+            delete Game.asteroidList[asteroid.id];
+            delete asteroid;
+        }
+
+
+        // clear projectiles
+        for (var i in Game.projectilesList){
+            var projectile = Game.projectilesList[i];
+            delete Game.projectilesList[projectile.id];
+            delete projectile;
+        }
+
+        // prevent duplicating the interval
+        clearInterval(Game.mainLoop);
+
+        Game.render.clearScreen();
+
+        // display game over
+        Game.render.gameOverMenu();
+
+        Game.restartHandler = function(event){
+            Game.restart(event);
+        };
+
+        Game.restartListener = window.addEventListener('keydown', Game.restartHandler)
     },
     player: {
         name: 'Scooter',
@@ -87,9 +131,6 @@ var Game = {
 
             // now that key press has been handled, we need to reset it
             Game.controls.keyActive = null;
-        },
-        destroyPlayer: function(){
-            // player dies, game over
         }
     },
     projectile: class {
@@ -239,8 +280,8 @@ var Game = {
 
             this.effectiveSpeed = (deltaX * this.speed) + (deltaY * this.speed) / 2;
 
-            this.location.x = this.location.x + (deltaX * this.speed);
-            this.location.y = this.location.y + (deltaY * this.speed);
+            this.location.x = this.location.x + ((deltaX * this.speed) / 2);
+            this.location.y = this.location.y + ((deltaY * this.speed) / 2);
         }
 
         checkAsteroidOutOfBounds(){
@@ -249,6 +290,23 @@ var Game = {
                 Math.abs(this.location.x - this.originLocation.x) > 1600 &&
                 Math.abs(this.location.y - this.originLocation.y) > 1600
             )
+        }
+
+        checkCollisionWithPlayer(){
+            var xDiff = Math.abs(Game.player.location.x - this.location.x);
+            var yDiff = Math.abs(Game.player.location.y - this.location.y);
+            
+            if (this.width > Game.player.spriteWidth){
+                var collisionOffset = (this.width / 2);
+            }
+            else {
+                var collisionOffset = (Game.player.spriteWidth / 2);
+            }
+
+            if (xDiff <= collisionOffset && yDiff <= collisionOffset){
+                return true;
+            }
+            return false;
         }
     },
     asteroidList: {},
@@ -347,6 +405,65 @@ Game.render = {
         ctx.fillStyle = "rgb(0 0 0)";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
     },
+
+    /**
+     * Renders a game over menu, that displays score and
+     * prompts the user to play again
+     */
+    gameOverMenu: function(){
+        const canvas = document.getElementById("canvas");
+        const ctx = canvas.getContext("2d");
+
+        // Draw a menu box border
+        ctx.fillStyle = "rgb(255 255 255)";
+        ctx.fillRect(
+            canvas.width / 4 - 5,
+            canvas.height / 4 - 5,
+            canvas.width / 2 + 10,
+            canvas.height / 2 + 10
+        );
+
+        // Draw a menu box
+        ctx.fillStyle = "rgb(0 0 0)";
+        ctx.fillRect(
+            canvas.width / 4,
+            canvas.height / 4,
+            canvas.width / 2,
+            canvas.height / 2
+        );
+
+        // Write "GAME OVER"
+        ctx.fillStyle = "rgb(255 255 255)";
+        ctx.font = "30px 'Press Start 2P'";
+        var xOffset = 60;
+        var yOffset = 20;
+        ctx.fillText(
+            "GAME OVER",
+            canvas.width / 4 + xOffset,
+            canvas.height / 3 + yOffset
+        );
+
+        // Write Press 'R' To Play Again
+        ctx.fillStyle = "rgb(255 255 255)";
+        ctx.font = "14px 'Press Start 2P'";
+        var xOffset = 42;
+        var yOffset = 20;
+        ctx.fillText(
+            "PRESS 'R' TO PLAY AGAIN",
+            canvas.width / 4 + xOffset,
+            canvas.height / 2 - yOffset
+        );
+    },
+
+    /**
+     * Clears the active screen in canvas
+     */
+    clearScreen: function(){
+        const canvas = document.getElementById("canvas");
+        const ctx = canvas.getContext("2d");
+        ctx.fillStyle = "rgb(0 0 0)";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
 };
 
 /**
@@ -373,28 +490,61 @@ const main = function(){
     score.renderScore(canvas, ctx);
 
     // everything below here will be part of the game loop
-    var asteroidTimerDefault = 3 * 60;
+    var asteroidTimerDefault = 2 * 60;
 
     // Move this to Game object
     // reduce timer as player accumulates score
     // to increase rate of asteroid spawn
-    var asteroidTimer = 3 * 60; // multiplied by 60 because 60fps
+    var asteroidTimer = 2 * 60; // multiplied by 60 because 60fps
+    var numberAsteroidsToSpawn = 1;
+    var decrementValueBasedOnScore = 0;
 
-    setInterval(function(){
+
+    Game.mainLoop = setInterval(function(){
         // update player location based on activeKey
         Game.player.updatePlayerLocation();
         Game.render.refreshBackgroundCanvas(canvas, ctx);
         Game.render.renderPlayerSprite(canvas, ctx);
 
-        // decrement asteroid timer
+        // decrement asteroid timer by 1 always
         asteroidTimer--;
+        // want to do a calc to spawn more asteroids at once
+        // if we are getting higher up in score
+        if (Game.activeScore.value > (0.5 * asteroidTimerDefault)) {
+            // whole number that is the number of times
+            // (0.5 * asteroid timer) goes into Total score
+            if (numberAsteroidsToSpawn < Game.activeScore.value / (0.5 * asteroidTimerDefault)){
+                // increment the number of asteroids to spawn
+                // will start spawning 2 asteroids at once
+                numberAsteroidsToSpawn++;
+            }
+            decrementValueBasedOnScore = Math.floor(decrementValueBasedOnScore % (0.5 * asteroidTimerDefault));
+            // asteroidTimer -= decrementValueBasedOnScore; 
+        }
+        else {
+            // default handler when under 60 points
+            decrementValueBasedOnScore = Game.activeScore.value;
+            // asteroidTimer = asteroidTimer - decrementValueBasedOnScore;
+        }
+
+        // as game progresses, speed up rate of asteroid spawn
+
+        
 
         if (asteroidTimer <= 0){
             // create new asteroid
             // and add to active list
-            var newAsteroid = new Game.asteroid();
-            asteroidTimer = asteroidTimerDefault;
-            Game.asteroidList[newAsteroid.id] = newAsteroid;
+            var count = 0;
+
+            console.log("spawning " + numberAsteroidsToSpawn + " asteroids");
+
+            while (count < numberAsteroidsToSpawn){
+                console.log("spawning asteroid " + (count + 1) + " of " + numberAsteroidsToSpawn);
+                var newAsteroid = new Game.asteroid();
+                asteroidTimer = asteroidTimerDefault;
+                Game.asteroidList[newAsteroid.id] = newAsteroid;
+                count++;
+            }
         }
 
         // render all active projectiles
@@ -456,8 +606,16 @@ const main = function(){
                 delete asteroid;
             }
 
-            asteroid.updateLocation();
-            asteroid.render(canvas, ctx);
+            if (asteroid.checkCollisionWithPlayer()){
+                console.log("Player hit by asteroid :(");
+                // end game
+
+                Game.endGame();
+            }
+            else {
+                asteroid.updateLocation();
+                asteroid.render(canvas, ctx);
+            }
         }
 
         score.renderScore(canvas, ctx);
