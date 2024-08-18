@@ -172,6 +172,7 @@ var Game = {
             this.height = size; // should be dynamic (random number between 16-128)
             this.width = size; // should be dynamic (random number between 16-128)
             this.speed = speed; // should be dynamic (random number between 1-10)
+            this.effectiveSpeed = 0;
 
             this.originLocation = {
                 // Should randomize both, but at least one component
@@ -235,6 +236,8 @@ var Game = {
 
             var deltaY = end.y - start.y + (options[yIndex] * amount);
             var deltaX = end.x - start.x + (options[xIndex] * amount);
+
+            this.effectiveSpeed = (deltaX * this.speed) + (deltaY * this.speed) / 2;
 
             this.location.x = this.location.x + (deltaX * this.speed);
             this.location.y = this.location.y + (deltaY * this.speed);
@@ -416,8 +419,9 @@ const main = function(){
                     // for now just have a static +1 added
                     // but will want to calculate the new score
                     // based on asteroid size and speed
-                    // console.log(++Game.player.score);
-                    score.updateScore(1);
+
+                    var addScoreValue = 1 + Math.abs(Math.round(asteroid.effectiveSpeed / (asteroid.width/10)));
+                    score.updateScore(addScoreValue);
 
                     return;
                 }
