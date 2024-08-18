@@ -534,17 +534,31 @@ const main = function(){
         if (asteroidTimer <= 0){
             // create new asteroid
             // and add to active list
-            var count = 0;
+            var spawnCountIndex = 0;
 
             console.log("spawning " + numberAsteroidsToSpawn + " asteroids");
 
-            while (count < numberAsteroidsToSpawn){
+            var spawnAsteroidRecursive = function(count){
+                if (count === numberAsteroidsToSpawn){
+                    return;
+                }
                 console.log("spawning asteroid " + (count + 1) + " of " + numberAsteroidsToSpawn);
                 var newAsteroid = new Game.asteroid();
+                console.log("asteroid id: " + newAsteroid.id);
                 asteroidTimer = asteroidTimerDefault;
                 Game.asteroidList[newAsteroid.id] = newAsteroid;
                 count++;
+
+                // need this to prevent asteroids from sharing id
+                // which would deleting multiple at once on destruction
+                setTimeout(function(){
+                    spawnAsteroidRecursive(count);
+                }, 50)
             }
+
+            spawnAsteroidRecursive(spawnCountIndex);
+            // reset asteroid timer
+            asteroidTimer = asteroidTimerDefault;
         }
 
         // render all active projectiles
