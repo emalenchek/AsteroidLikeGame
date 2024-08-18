@@ -2,8 +2,11 @@
 /**
  * WHEN THE WINDOW LOADS
  */
-window.addEventListener('load', function(){
-    main();
+window.addEventListener('load', async function(){
+    // need this to wait for the font to load
+    await document.fonts.ready.then(function(){
+        main();
+    });
 });
 
 // This is our Game
@@ -17,8 +20,8 @@ var Game = {
             this.width = 48;
             this.height = 48;
             this.location = {
-                x: Number((800 / 2) - (0.5 * this.width)),
-                y: Number((800 / 16) - (0.5 * this.height))
+                x: Number((800 / 2) - (0.3 * this.width)),
+                y: Number((800 / 12) - (0.5 * this.height))
             },
             this.color = 'rgb(255 255 255)';
         };
@@ -32,11 +35,15 @@ var Game = {
             ctx.fillStyle = this.color;
             // right now just render a rectangle, but want to
             // build number vector graphic based on value
-            ctx.fillRect(
+
+            var displayScoreText = this.value;
+
+            ctx.font = "30px 'Press Start 2P'";
+
+            ctx.fillText(
+                displayScoreText,
                 this.location.x,
-                this.location.y,
-                this.width,
-                this.height
+                this.location.y
             );
         }
 

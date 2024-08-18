@@ -1,12 +1,8 @@
 
 TODO:
 
-- Render score on screen
-    - value is updating when
-    asteroids are destroyed
-    - need to create numerical value and render to canvas
 - Update score based on asteroid
-size and speed.
+size and speed. HOLD
 - When asteroid is destroyed
     - spawn 4 little baby asteroids
     that are smaller
