@@ -4,8 +4,7 @@
  */
 window.addEventListener('load', async function(){
     // need this to wait for the font to load
-    var fonts = await document.fonts.ready;
-    console.log(fonts);
+    await document.fonts.ready;
     // setup before rendering even starts
     const canvas = document.getElementById("canvas");
     const ctx = canvas.getContext("2d");
