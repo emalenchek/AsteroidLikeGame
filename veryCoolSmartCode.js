@@ -38,11 +38,17 @@ var Game = {
 
             var displayScoreText = this.value;
 
+            var characterCount = String(displayScoreText).length;
+            console.log(characterCount);
+
+            // adjust the horizontal location by number of characters
+            var xOffset = (characterCount - 1) * -15;
+
             ctx.font = "30px 'Press Start 2P'";
 
             ctx.fillText(
                 displayScoreText,
-                this.location.x,
+                this.location.x + xOffset,
                 this.location.y
             );
         }
@@ -214,6 +220,7 @@ var Game = {
             this.width = size; // should be dynamic (random number between 16-128)
             this.speed = speed; // should be dynamic (random number between 1-10)
             this.effectiveSpeed = 0;
+            this.rotateClockwise = Math.random() > 0.5;
 
             this.originLocation = {
                 // Should randomize both, but at least one component
@@ -246,13 +253,28 @@ var Game = {
             // nothing yet
             ctx.fillStyle = this.color;
 
-            // TODO: rotation of Rect in place when drawing
-            //this.rotationValue++;
-            // if (this.rotationValue > 360){
-            //     this.rotationValue = 0;
-            // }
+            if (this.rotateClockwise){
+                this.rotationValue++;
+                if (this.rotationValue > 360){
+                    this.rotationValue = 0;
+                }
+            }
+            else {
+                this.rotationValue--;
+                if (this.rotationValue < 0){
+                    this.rotationValue = 360;
+                }
+            }
+            
+            // Matrix transformation
+            ctx.translate(
+                this.location.x,
+                this.location.y
+            );
+            ctx.rotate((this.rotationValue * Math.PI) / 180);
+            ctx.translate(-this.location.x, -this.location.y);
 
-            // ctx.rotate((this.rotationValue * Math.PI) / 180);
+            // Rotated rectangle
             ctx.fillRect(
                 this.location.x - (0.5 * this.width),
                 this.location.y - (0.5 * this.height),
@@ -261,7 +283,7 @@ var Game = {
             );
 
             // Reset transformation matrix to the identity matrix
-            // ctx.setTransform(1, 0, 0, 1, 0, 0);
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
         }
 
         updateLocation(){

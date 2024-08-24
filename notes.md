@@ -1,14 +1,9 @@
 
 TODO:
-
-- Asteroid rotation
 - refine movement
-- fix score display offset as
-score increases
 - Start game menu / title screen
 - Name the game
 - improve art of asteroids and spaceship
-
 
 STRETCH:
 - different weapon and ship types
