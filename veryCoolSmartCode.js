@@ -4,9 +4,25 @@
  */
 window.addEventListener('load', async function(){
     // need this to wait for the font to load
-    await document.fonts.ready.then(function(){
-        main();
-    });
+    var fonts = await document.fonts.ready;
+    console.log(fonts);
+    // setup before rendering even starts
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d");
+    Game.render.showTitleScreen(canvas, ctx);
+
+    var callback = function(e){
+        if (e.key === 'Enter' || e.key === 'Return'){
+            main();
+        }
+        window.removeEventListener('keydown', callback);
+    };
+
+    window.addEventListener('keydown', callback);
+
+    window.setTimeout(function(){
+        Game.render.showTitleScreen(canvas, ctx);
+    }, 200);
 });
 
 // This is our Game
@@ -39,8 +55,6 @@ var Game = {
             var displayScoreText = this.value;
 
             var characterCount = String(displayScoreText).length;
-            console.log(characterCount);
-
             // adjust the horizontal location by number of characters
             var xOffset = (characterCount - 1) * -15;
 
@@ -399,6 +413,57 @@ var Game = {
 
 Game.render = {
     /**
+     * Displays title screen on game load
+     * @param {HTMLCanvasElement} canvas - HTML canvas element
+     * @param {CanvasRenderingContext2D} ctx - 2d canvas ctx
+     */
+    showTitleScreen: function(canvas, ctx){
+        ctx.fillStyle = "rgb(0 0 0)";
+        ctx.fillRect(0, 0, 800, 800);
+
+        // Draw a menu box border
+        ctx.fillStyle = "rgb(255 255 255)";
+        ctx.fillRect(
+            canvas.width / 4 - 5,
+            canvas.height / 4 - 5,
+            canvas.width / 2 + 10,
+            canvas.height / 2 + 10
+        );
+
+        // Draw a menu box
+        ctx.fillStyle = "rgb(0 0 0)";
+        ctx.fillRect(
+            canvas.width / 4,
+            canvas.height / 4,
+            canvas.width / 2,
+            canvas.height / 2
+        );
+
+        ctx.fillStyle = "rgb(255 255 255)";
+        var titleText = "DESTROID";
+        var xOffset = -120;
+        var yOffset = 40;
+
+        ctx.font = "30px 'Press Start 2P'";
+        ctx.fillText(
+            titleText,
+            400 + xOffset,
+            400 - yOffset
+        );
+
+        var messageText = "PRESS 'ENTER' TO START";
+        var xOffset = -150;
+        var yOffset = -100;
+
+        ctx.font = "14px 'Press Start 2P'";
+        ctx.fillText(
+            messageText,
+            400 + xOffset,
+            400 - yOffset
+        );
+    },
+
+    /**
      * Renders the canvas at the start of the game
      */
     renderCanvasInit: function(canvas, ctx){
@@ -558,15 +623,11 @@ const main = function(){
             // and add to active list
             var spawnCountIndex = 0;
 
-            console.log("spawning " + numberAsteroidsToSpawn + " asteroids");
-
             var spawnAsteroidRecursive = function(count){
                 if (count === numberAsteroidsToSpawn){
                     return;
                 }
-                console.log("spawning asteroid " + (count + 1) + " of " + numberAsteroidsToSpawn);
                 var newAsteroid = new Game.asteroid();
-                console.log("asteroid id: " + newAsteroid.id);
                 asteroidTimer = asteroidTimerDefault;
                 Game.asteroidList[newAsteroid.id] = newAsteroid;
                 count++;
@@ -643,9 +704,7 @@ const main = function(){
             }
 
             if (asteroid.checkCollisionWithPlayer()){
-                console.log("Player hit by asteroid :(");
                 // end game
-
                 Game.endGame();
             }
             else {
