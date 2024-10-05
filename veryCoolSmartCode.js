@@ -77,6 +77,8 @@ var Game = {
         // prevent player from accidentally restarting
         if (event.key === 'r' || event.key === 'R'){
             window.removeEventListener('keydown', Game.restartHandler);
+
+            Game.asteroidList = [];
             Game.render.clearScreen();
             main();
         }
@@ -122,10 +124,12 @@ var Game = {
             x: 400,
             y: 400
         },
+        spriteImage: document.getElementById("scooter-img"),
         color: 'rgb(255 255 255)',
         speed: 10,
-        spriteWidth: 32,
-        spriteHeight: 32,
+        spriteWidth: 48,
+        spriteHeight: 48,
+        orientation: 0,
         updatePlayerLocation: function(){
             // update the player location once every frame
             var activeKey = Game.controls.keyActive;
@@ -164,14 +168,16 @@ var Game = {
             };
             this.color = 'rgb(255 255 255)';
             this.id = Date.now();
-            this.deltaX = deltaX,
-            this.deltaY = deltaY
+            this.deltaX = deltaX;
+            this.deltaY = deltaY;
+            this.spriteImage = document.getElementById("projectile-img");
         };
 
         // update canvas ctx with new location for projectile
         render(canvas, ctx){
             ctx.fillStyle = this.color;
-            ctx.fillRect(
+            ctx.drawImage(
+                this.spriteImage,
                 this.location.x - (0.5 * this.width),
                 this.location.y - (0.5 * this.height),
                 this.width,
@@ -181,6 +187,24 @@ var Game = {
 
         // updates then projectile line equation trajectory and multiplying by speed scalar
         updateLocation(){
+            // sets a minimum projectile speed
+            if (Math.abs(this.deltaX) < 15){
+                if (this.deltaX <= 0){
+                    this.deltaX = -15;
+                }
+                else {
+                    this.deltaX = 15;
+                }
+            }
+            if (Math.abs(this.deltaY) < 15){
+                if (this.deltaY <= 0){
+                    this.deltaY = -15;
+                }
+                else {
+                    this.deltaY = 15;
+                }
+            }
+            
             this.location.x = this.location.x + (this.deltaX * this.speed);
             this.location.y = this.location.y + (this.deltaY * this.speed);
         }
@@ -234,6 +258,7 @@ var Game = {
             this.speed = speed; // should be dynamic (random number between 1-10)
             this.effectiveSpeed = 0;
             this.rotateClockwise = Math.random() > 0.5;
+            this.spriteImage = document.getElementById("asteroid-img");
 
             this.originLocation = {
                 // Should randomize both, but at least one component
@@ -288,7 +313,8 @@ var Game = {
             ctx.translate(-this.location.x, -this.location.y);
 
             // Rotated rectangle
-            ctx.fillRect(
+            ctx.drawImage(
+                this.spriteImage,
                 this.location.x - (0.5 * this.width),
                 this.location.y - (0.5 * this.height),
                 this.width,
@@ -378,24 +404,28 @@ var Game = {
             if (Game.player.location.y - (Game.player.speed * 2) > 0){
                 Game.player.location.y -= Game.player.speed;
             }
+            Game.player.orientation = 0;
         },
         handlePressA: function(){
             // Moving the player 'left' in the canvas window
             if (Game.player.location.x - (Game.player.speed * 2) > 0){
                 Game.player.location.x -= Game.player.speed;
             }
+            Game.player.orientation = 270;
         },
         handlePressS: function(){
             // Moving the player 'down' in the canvas window
             if (Game.player.location.y + (Game.player.speed * 2) < 800){
                 Game.player.location.y += Game.player.speed;
             }
+            Game.player.orientation = 180;
         },
         handlePressD: function(){
             // Moving the player 'right' in the canvas window
             if (Game.player.location.x + (Game.player.speed * 2) < 800){
                 Game.player.location.x += Game.player.speed;
             }
+            Game.player.orientation = 90;
         },
         keyActive: null, // most recent pressed key
         controlListeners: {} // keeps track of active event listeners
@@ -476,12 +506,32 @@ Game.render = {
      */
     renderPlayerSprite: function(canvas, ctx){
         ctx.fillStyle = Game.player.color;
-        ctx.fillRect(
-            Game.player.location.x - (0.5 * Game.player.spriteWidth), // x location of player on canvas
-            Game.player.location.y - (0.5 * Game.player.spriteHeight), // y location of player on canvas
-            Game.player.spriteWidth, // sprite width
-            Game.player.spriteHeight // sprite height
+        // ctx.fillRect(
+        //     Game.player.location.x - (0.5 * Game.player.spriteWidth), // x location of player on canvas
+        //     Game.player.location.y - (0.5 * Game.player.spriteHeight), // y location of player on canvas
+        //     Game.player.spriteWidth, // sprite width
+        //     Game.player.spriteHeight // sprite height
+        // );
+
+
+        // Matrix transformation
+        ctx.translate(
+            Game.player.location.x,
+            Game.player.location.y
         );
+        ctx.rotate((Game.player.orientation * Math.PI) / 180);
+        ctx.translate(-Game.player.location.x, -Game.player.location.y);
+
+        ctx.drawImage(
+            Game.player.spriteImage,
+            Game.player.location.x - (0.5 * Game.player.spriteWidth), // x location of player on canvas
+            Game.player.location.y - (0.5 * Game.player.spriteHeight), // y location of player
+            Game.player.spriteWidth, // sprite width
+            Game.player.spriteHeight // sprite height on canvas
+        );
+
+        // Reset transformation matrix to the identity matrix
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
     },
 
     /**

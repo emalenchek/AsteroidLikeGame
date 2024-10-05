@@ -1,10 +1,5 @@
 
 TODO:
-- title screen
-- refine movement
-- Start game menu / title screen
-- Name the game "Destroid"
-- improve art of asteroids and spaceship
 
 STRETCH:
 - different weapon and ship types
